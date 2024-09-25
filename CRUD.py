@@ -78,6 +78,34 @@ def update_user(user):
         conn.close()
     return updated_user
 
+def patch_user(user):
+    updated_user = {}
+    try:
+        user_id = user.get("user_id")
+        if not user_id:
+            return {"error": "User ID is required"}, 400
+        existing_user = get_user_by_id(user_id)
+        if not existing_user:
+            return {"error": "User not found"}, 404
+        # Only update the fields that were provided in the JSON request body
+        updated_name = user.get("name", existing_user["name"])
+        updated_email = user.get("email", existing_user["email"])
+        updated_phone = user.get("phone", existing_user["phone"])
+        updated_address = user.get("address", existing_user["address"])
+        updated_country = user.get("country", existing_user["country"])
+        conn = connect_to_db()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET name = ?, email = ?, phone = ?, address = ?, country = ? WHERE user_id = ?", (updated_name, updated_email, updated_phone, updated_address, updated_country, user_id))
+        conn.commit()
+        updated_user = get_user_by_id(user_id)
+    except Exception as e:
+        print(f"Error: {e}")
+        conn.rollback()
+        updated_user = {"error": "Update failed"}
+    finally:
+        conn.close()
+    return updated_user
+
 
 def delete_user(user_id):
     message = {}
